@@ -5,10 +5,10 @@
 HTTP                                                     A. Backman, Ed.
 Internet-Draft                                                    Amazon
 Intended status: Standards Track                               J. Richer
-Expires: 6 December 2021                             Bespoke Engineering
+Expires: 5 January 2022                              Bespoke Engineering
                                                                M. Sporny
                                                           Digital Bazaar
-                                                             4 June 2021
+                                                             4 July 2021
 
 
                          Signing HTTP Messages
@@ -53,7 +53,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 6 December 2021.
+   This Internet-Draft will expire on 5 January 2022.
 
 Copyright Notice
 
@@ -83,12 +83,10 @@ Table of Contents
        2.1.2.  Canonicalization Examples
      2.2.  Dictionary Structured Field Members
        2.2.1.  Canonicalization Examples
-     2.3.  List Prefixes
-       2.3.1.  Canonicalization Examples
-     2.4.  Specialty Content Fields
-       2.4.1.  Request Target
-       2.4.2.  Signature Parameters
-     2.5.  Creating the Signature Input String
+     2.3.  Specialty Content Fields
+       2.3.1.  Request Target
+       2.3.2.  Signature Parameters
+     2.4.  Creating the Signature Input String
    3.  HTTP Message Signatures
      3.1.  Creating a Signature
      3.2.  Verifying a Signature
@@ -302,7 +300,7 @@ Table of Contents
 
    Covered Content:
       An ordered list of content identifiers for headers (Section 2.1)
-      and specialty content (Section 2.4) that indicates the metadata
+      and specialty content (Section 2.3) that indicates the metadata
       and message content that is covered by the signature, not
       including the "@signature-params" specialty field itself.
 
@@ -356,14 +354,14 @@ Table of Contents
 
    *  A means of retrieving the key material used to verify the
       signature.  An application will usually use the "keyid" parameter
-      of the signature parameters (Section 2.4.2) and define rules for
+      of the signature parameters (Section 2.3.2) and define rules for
       resolving a key from there, though the appropriate key could be
       known from other means.
 
    *  A means of determining the signature algorithm used to verify the
       signature content is appropriate for the key material.  For
       example, the process could use the "alg" parameter of the
-      signature parameters (Section 2.4.2) to state the algorithm
+      signature parameters (Section 2.3.2) to state the algorithm
       explicitly, derive the algorithm from the key material, or use
       some pre-configured algorithm agreed upon by the signer and
       verifier.
@@ -408,7 +406,7 @@ Table of Contents
    The following sections define content identifier types, their
    parameters, their associated content, and their canonicalization
    rules.  The method for combining content identifiers into the
-   signature input string is defined in Section 2.5.
+   signature input string is defined in Section 2.4.
 
 2.1.  HTTP Headers
 
@@ -516,48 +514,7 @@ Table of Contents
                     Table 2: Non-normative examples of
                    Dictionary member canonicalization.
 
-2.3.  List Prefixes
-
-   A prefix of a List Structured Field consisting of the first N members
-   in the field's value (where N is an integer greater than 0 and less
-   than or equal to the number of members in the List) is identified by
-   the parameter "prefix" with the value of N as an integer.
-
-   A list prefix value is canonicalized by applying the serialization
-   algorithm described in Section 4.1.1 of RFC8941 [RFC8941] on a List
-   containing only the first N members as specified in the list prefix,
-   in the order they appear in the original List.
-
-2.3.1.  Canonicalization Examples
-
-   This section contains non-normative examples of canonicalized values
-   for list prefixes given the following example header fields, whose
-   values are assumed to be Dictionaries:
-
-   X-List-A: (a b c d e f)
-   X-List-B: ()
-
-   The following table shows example canonicalized values for different
-   content identifiers, given those fields:
-
-               +=====================+=====================+
-               | Content Identifier  | Canonicalized Value |
-               +=====================+=====================+
-               | "x-list-a";prefix=0 | ()                  |
-               +---------------------+---------------------+
-               | "x-list-a";prefix=1 | (a)                 |
-               +---------------------+---------------------+
-               | "x-list-a";prefix=3 | (a, b, c)           |
-               +---------------------+---------------------+
-               | "x-list-a";prefix=6 | (a, b, c, d, e, f)  |
-               +---------------------+---------------------+
-               | "x-list-b";prefix=0 | ()                  |
-               +---------------------+---------------------+
-
-                  Table 3: Non-normative examples of list
-                          prefix canonicalization.
-
-2.4.  Specialty Content Fields
+2.3.  Specialty Content Fields
 
    Content not found in an HTTP header can be included in the signature
    base string by defining a content identifier and the canonicalization
@@ -568,16 +525,16 @@ Table of Contents
    This specification defines the following specialty content
    identifiers:
 
-   @request-target  The target request endpoint.  (Section 2.4.1)
+   @request-target  The target request endpoint.  (Section 2.3.1)
 
    @signature-params  The signature metadata parameters for this
-      signature.  (Section 2.4.2)
+      signature.  (Section 2.3.2)
 
    Additional specialty content identifiers MAY be defined and
    registered in the HTTP Signatures Specialty Content Identifier
    Registry.  (Section 5.3)
 
-2.4.1.  Request Target
+2.3.1.  Request Target
 
    The request target endpoint, consisting of the request method and the
    path and query of the effective request URI, is identified by the
@@ -594,7 +551,7 @@ Table of Contents
        header in [HTTP2], Section 8.1.2.3.  The resulting string is the
        canonicalized value.
 
-2.4.1.1.  Canonicalization Examples
+2.3.1.1.  Canonicalization Examples
 
    The following table contains non-normative example HTTP messages and
    their canonicalized "@request-target" values.
@@ -619,21 +576,37 @@ Table of Contents
        |   Host: server.example.com|                 |
        +-------------------------+-----------------+
 
-            Table 4: Non-normative examples of "@request-target"
+            Table 3: Non-normative examples of "@request-target"
                              canonicalization.
 
-2.4.2.  Signature Parameters
+2.3.2.  Signature Parameters
 
    HTTP Message Signatures have metadata properties that provide
    information regarding the signature's generation and/or verification.
 
-   The signature parameters special content is identified by the
+   The signature parameters specialty content is identified by the
    "@signature-params" identifier.
 
    Its canonicalized value is the serialization of the signature
    parameters for this signature, including the covered content list
-   with all associated parameters.  The following metadata properties
-   are defined:
+   with all associated parameters.
+
+   *  "alg": The HTTP message signature algorithm from the HTTP Message
+      Signature Algorithm Registry, as an "sf-string" value.
+
+   *  "keyid": The identifier for the key material as an "sf-string"
+      value.
+
+   *  "created": Creation time as an "sf-integer" UNIX timestamp value.
+      Sub-second precision is not supported.
+
+   *  "expires": Expiration time as an "sf-integer" UNIX timestamp
+      value.  Sub-second precision is not supported.
+
+   *  "nonce": A random unique value generated for this signature.
+
+   Additional parameters can be defined in the HTTP Signature Parameters
+   Registry (Section 5.2.2).
 
    The signature parameters are serialized using the rules in Section 4
    of RFC8941 [RFC8941] as follows:
@@ -643,31 +616,17 @@ Table of Contents
    2.  Determine an order for the content identifiers of the covered
        content.  Once this order is chosen, it cannot be changed.
 
-   3.  Serialize the content identifiers of the covered content as an
-       ordered "inner-list" according to Section 4.1.1.1 of RFC8941
-       [RFC8941] and append this to the output.
+   3.  Serialize the content identifiers of the covered content,
+       including all parameters, as an ordered "inner-list" according to
+       Section 4.1.1.1 of RFC8941 [RFC8941] and append this to the
+       output.
 
-   4.  Determine an order for signature metadata parameters.  Once this
-       order is chosen, it cannot be changed.
+   4.  Determine an order for any signature parameters.  Once this order
+       is chosen, it cannot be changed.
 
-   5.  Append the signature metadata as parameters according to
-       Section 4.1.1.2 of RFC8941 [RFC8941] in the chosen order,
-       skipping fields that are not available or not used for this
-       signature:
-
-       *  "alg": The HTTP message signature algorithm from the HTTP
-          Message Signature Algorithm Registry, as an "sf-string" value.
-
-       *  "keyid": The identifier for the key material as an "sf-string"
-          value.
-
-       *  "created": Creation time as an "sf-integer" UNIX timestamp
-          value.  Sub-second precision is not supported.
-
-       *  "expires": Expiration time as an "sf-integer" UNIX timestamp
-          value.  Sub-second precision is not supported.
-
-       *  "nonce": A random unique value generated for this signature.
+   5.  Append the parameters to the "inner-list" in the chosen order
+       according to Section 4.1.1.2 of RFC8941 [RFC8941], skipping
+       parameters that are not available or not used for this signature.
 
    6.  The output contains the signature parameters value.
 
@@ -687,7 +646,7 @@ Table of Contents
    the signature parameters used for the current signature are included
    in this field.
 
-2.5.  Creating the Signature Input String
+2.4.  Creating the Signature Input String
 
    The signature input is a US-ASCII string containing the content that
    is covered by the signature.  To create the signature input string,
@@ -708,11 +667,11 @@ Table of Contents
        3.  Append a single space "" ""
 
        4.  Append the covered content's canonicalized value, as defined
-           by the covered content type.  (Section 2.1 and Section 2.4)
+           by the covered content type.  (Section 2.1 and Section 2.3)
 
        5.  Append a single newline ""\\n""
 
-   3.  Append the signature parameters (Section 2.4.2) as follows:
+   3.  Append the signature parameters (Section 2.3.2) as follows:
 
        1.  Append the identifier for the signature parameters serialized
            according to the "content-identifier" rule, ""@signature-
@@ -723,7 +682,7 @@ Table of Contents
        3.  Append a single space "" ""
 
        4.  Append the signature parameters' canonicalized value as
-           defined in Section 2.4.2
+           defined in Section 2.3.2
 
    4.  Return the output string.
 
@@ -740,20 +699,11 @@ Table of Contents
       header field that is not present in the message, is not a
       Dictionary Structured Field, or whose value is malformed.
 
-   *  The identifier is a List Prefix member identifier that references
-      a header field that is not present in the message, is not a List
-      Structured Field, or whose value is malformed.
-
    *  The identifier is a Dictionary member identifier that references a
       member that is not present in the header field value, or whose
       value is malformed.  E.g., the identifier is
-      ""x-dictionary";key=c" and the value of the "x-dictionary" header
-      field is "a=1, b=2"
-
-   *  The identifier is a List Prefix member identifier that specifies
-      more List members than are present the header field.  E.g., the
-      identifier is ""x-list";prefix=3" and the value of the "x-list"
-      header field is "(1, 2)".
+      ""x-dictionary";key="c"" and the value of the "x-dictionary"
+      header field is "a=1, b=2"
 
    In the following non-normative example, the HTTP message being signed
    is the following request:
@@ -767,8 +717,8 @@ Table of Contents
    Cache-Control: max-age=60
    Cache-Control: must-revalidate
 
-   The covered content consists of the "@request-target" speciality
-   header followed by the "Host", "Date", "Cache-Control", "X-Empty-
+   The covered content consists of the "@request-target" specialty
+   content followed by the "Host", "Date", "Cache-Control", "X-Empty-
    Header", "X-Example" HTTP headers, in order.  The signature creation
    timestamp is "1618884475" and the key identifier is "test-key-rsa-
    pss".  The signature input string for this message with these
@@ -823,11 +773,11 @@ Table of Contents
 
        *  Each covered content identifier MUST either reference an HTTP
           header in the request message Section 2.1 or reference a
-          specialty content field listed in Section 2.4 or its
+          specialty content field listed in Section 2.3 or its
           associated registry.
 
        *  Signers SHOULD include "@request-target" in the covered
-          content list list.
+          content list.
 
        *  Signers SHOULD include a date stamp in some form, such as
           using the "date" header.  Alternatively, the "created"
@@ -844,7 +794,7 @@ Table of Contents
           in the signature input.  This ensures that a signature always
           covers its own metadata.
 
-   5.  The signer creates the signature input string.  (Section 2.5)
+   5.  The signer creates the signature input string.  (Section 2.4)
 
    6.  The signer signs the signature input with the chosen signing
        algorithm using the key material chosen by the signer.  Several
@@ -855,7 +805,7 @@ Table of Contents
        header as defined in Section 4.2.
 
    For example, given the HTTP message and signature parameters in the
-   example in Section 2.5, the example signature input string when
+   example in Section 2.4, the example signature input string when
    signed with the "test-key-rsa-pss" key in Appendix B.1.2 gives the
    following message signature output value, encoded in Base64:
 
@@ -932,9 +882,9 @@ Table of Contents
 
    7.  Use the received HTTP message and the signature's metadata to
        recreate the signature input, using the process described in
-       Section 2.5.  The value of the "@signature-params" input is the
+       Section 2.4.  The value of the "@signature-params" input is the
        value of the SignatureInput header field for this signature
-       serialized according to the rules described in Section 2.4.2, not
+       serialized according to the rules described in Section 2.3.2, not
        including the signature's label from the "Signature-Input"
        header.
 
@@ -988,7 +938,7 @@ Table of Contents
    or MAC method that is appropriate for the key material, environment,
    and needs of the signer and verifier.  All signatures are generated
    from and verified against the byte values of the signature input
-   string defined in Section 2.5.
+   string defined in Section 2.4.
 
    Each signature algorithm method takes as its input the signature
    input string as a set of byte values ("I"), the signing key material
@@ -1006,14 +956,14 @@ Table of Contents
 
    This section contains several common algorithm methods.  The method
    to use can be communicated through the algorithm signature parameter
-   defined in Section 2.4.2, by reference to the key material, or
+   defined in Section 2.3.2, by reference to the key material, or
    through mutual agreement between the signer and verifier.
 
 3.3.1.  RSASSA-PSS using SHA-512
 
    To sign using this algorithm, the signer applies the "RSASSA-PSS-SIGN
    (K, M)" function [RFC8017] with the signer's private signing key
-   ("K") and the signature input string ("M") (Section 2.5).  The mask
+   ("K") and the signature input string ("M") (Section 2.4).  The mask
    generation function is "MGF1" as specified in [RFC8017] with a hash
    function of SHA-512 [RFC6234].  The salt length ("sLen") is 64 bytes.
    The hash function ("Hash") SHA-512 [RFC6234] is applied to the
@@ -1038,7 +988,7 @@ Table of Contents
 
    To sign using this algorithm, the signer applies the "RSASSA-
    PKCS1-V1_5-SIGN (K, M)" function [RFC8017] with the signer's private
-   signing key ("K") and the signature input string ("M") (Section 2.5).
+   signing key ("K") and the signature input string ("M") (Section 2.4).
    The hash SHA-256 [RFC6234] is applied to the signature input string
    to create the digest content to which the digital signature is
    applied.  The resulting signed content byte array ("S") is the HTTP
@@ -1059,7 +1009,7 @@ Table of Contents
 
    To sign and verify using this algorithm, the signer applies the
    "HMAC" function [RFC2104] with the shared signing key ("K") and the
-   signature input string ("text") (Section 2.5).  The hash function
+   signature input string ("text") (Section 2.4).  The hash function
    SHA-256 [RFC6234] is applied to the signature input string to create
    the digest content to which the HMAC is applied, giving the signature
    result.
@@ -1077,7 +1027,7 @@ Table of Contents
 
    To sign using this algorithm, the signer applies the "ECDSA"
    algorithm [FIPS186-4] using curve P-256 with the signer's private
-   signing key and the signature input string (Section 2.5).  The hash
+   signing key and the signature input string (Section 2.4).  The hash
    SHA-256 [RFC6234] is applied to the signature input string to create
    the digest content to which the digital signature is applied.  The
    resulting signed content byte array is the HTTP message signature
@@ -1104,7 +1054,7 @@ Table of Contents
    signing algorithms.
 
    For both signing and verification, the HTTP messages signature input
-   string (Section 2.5) is used as the entire "JWS Signing Input".  The
+   string (Section 2.4) is used as the entire "JWS Signing Input".  The
    JOSE Header defined in [RFC7517] is not used, and the signature input
    string is not first encoded in Base64 before applying the algorithm.
    The output of the JWS signature is taken as a byte array prior to the
@@ -1122,7 +1072,7 @@ Table of Contents
    An HTTP message signature MUST use both headers: the "Signature" HTTP
    header field contains the signature value, while the "Signature-
    Input" HTTP header field identifies the covered content and
-   parameters that describe how the signature was generated.  The Each
+   parameters that describe how the signature was generated.  Each
    header MAY contain multiple labeled values, where the labels
    determine the correlation between the "Signature" and "Signature-
    Input" fields.
@@ -1136,7 +1086,7 @@ Table of Contents
    identifier that uniquely identifies the message signature within the
    context of the HTTP message.  The member's value is the serialization
    of the covered content including all signature metadata parameters,
-   using the serialization process defined in Section 2.4.2.
+   using the serialization process defined in Section 2.3.2.
 
    Signature-Input: sig1=("@request-target" "host" "date" \
      "cache-control" "x-empty-header" "x-example");created=1618884475\
@@ -1178,7 +1128,7 @@ Table of Contents
    signature over those fields and the client's original signature.
 
    The following is a non-normative example of header fields a reverse
-   proxy in addition to the examples in the previous sections.  The
+   proxy sets in addition to the examples in the previous sections.  The
    original signature is included under the identifier "sig1", and the
    reverse proxy's signature is included under "proxy_sig".  The proxy
    uses the key "rsa-test-key" to create its signature using the "rsa-
@@ -1361,18 +1311,18 @@ Table of Contents
            +=========+========+================================+
            | Name    | Status | Reference(s)                   |
            +=========+========+================================+
-           | alg     | Active | Section 2.4.2 of this document |
+           | alg     | Active | Section 2.3.2 of this document |
            +---------+--------+--------------------------------+
-           | created | Active | Section 2.4.2 of this document |
+           | created | Active | Section 2.3.2 of this document |
            +---------+--------+--------------------------------+
-           | expires | Active | Section 2.4.2 of this document |
+           | expires | Active | Section 2.3.2 of this document |
            +---------+--------+--------------------------------+
-           | keyid   | Active | Section 2.4.2 of this document |
+           | keyid   | Active | Section 2.3.2 of this document |
            +---------+--------+--------------------------------+
-           | nonce   | Active | Section 2.4.2 of this document |
+           | nonce   | Active | Section 2.3.2 of this document |
            +---------+--------+--------------------------------+
 
-              Table 5: Initial contents of the HTTP Signature
+              Table 4: Initial contents of the HTTP Signature
                        Metadata Parameters Registry.
 
 5.3.  HTTP Signature Specialty Content Identifiers Registry
@@ -1399,12 +1349,12 @@ Table of Contents
       +===================+========+================================+
       | Name              | Status | Reference(s)                   |
       +===================+========+================================+
-      | @request-target   | Active | Section 2.4.1 of this document |
+      | @request-target   | Active | Section 2.3.1 of this document |
       +-------------------+--------+--------------------------------+
-      | @signature-params | Active | Section 2.4.2 of this document |
+      | @signature-params | Active | Section 2.3.2 of this document |
       +-------------------+--------+--------------------------------+
 
-         Table 6: Initial contents of the HTTP Signature Specialty
+         Table 5: Initial contents of the HTTP Signature Specialty
                        Content Identifiers Registry.
 
 6.  Security Considerations
@@ -1518,9 +1468,9 @@ Appendix A.  Detecting HTTP Message Signatures
    past, including other non-standard definitions of the "Signature"
    header used within this specification.  It is recommended that
    developers wishing to support both this specification and other
-   historial drafts do so carefully and deliberately, as
+   historical drafts do so carefully and deliberately, as
    incompatibilities between this specification and various versions of
-   other drafts could lead to problems.
+   other drafts could lead to unexpected problems.
 
    It is recommended that implementers first detect and validate the
    "Signature-Input" header defined in this specification to detect that
@@ -1830,7 +1780,11 @@ Document History
 
    *  draft-ietf-httpbis-message-signatures
 
+      -  -06
+
       -  -05
+
+         o  Remove list prefixes.
 
          o  Clarify signature algorithm parameters.
 
